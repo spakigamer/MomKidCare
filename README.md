@@ -6,156 +6,178 @@ This project automatically fetches unread emails from your Gmail inbox and uses 
 
 ## 🔧 Features
 
-- Google OAuth2 login to read Gmail inbox.
-- Parses unread emails.
-- Uses **Gemini API** to extract structured data.
-- (Optional) Sends the extracted data via email.
+- 🔐 Google OAuth2 login to read Gmail inbox.
+- 📥 Parses unread emails.
+- 🤖 Uses Gemini API to extract structured data.
+- 📤 (Optional) Sends the extracted data via email using Nodemailer.
 
 ---
 
 ## 📁 Project Structure
 
+```
 backend/
-├── index.js # Entry point
-├── auth.js # Google OAuth and token management
-├── processEmails.js # Email reading & parsing logic
+├── index.js             # Entry point
+├── auth.js              # Google OAuth and token handling
+├── processEmails.js     # Gmail fetching + Gemini parsing
+├── services/
+│   └── forwarder.js     # (Optional) Email forwarder
 ├── utils/
-│ └── emailSender.js # (Optional) Nodemailer-based email sending
-├── credentials.json # Google OAuth credentials (keep private)
-├── token.json # Google saved OAuth tokens
-├── .env # Secrets and environment variables
+│   └── gemini.js        # Gemini API interaction
+├── credentials.json     # Google OAuth credentials (private)
+├── token.json           # Saved access token (private)
+├── .env                 # Environment variables
+├── .gitignore
 └── package.json
+```
 
-yaml
-Copy
-Edit
+---
+
+## ⚙️ Environment Variables
+
+Create a `.env` file in the `backend/` folder with this structure:
+
+```
+YOUR_GMAIL=your_email@gmail.com
+GMAIL_APP_PASSWORD=your_16_digit_app_password
+FORWARD_TO_EMAIL=recipient@example.com
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+### 🔐 Where to Get These?
+
+#### `YOUR_GMAIL`
+Your own Gmail address. This will be used to send the forwarded email.
+
+#### `GMAIL_APP_PASSWORD`
+1. Visit: [https://myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)  
+2. Enable 2-Step Verification if not already.
+3. Select **"Mail"** as the app and **"Other"** as the device.
+4. Copy the **16-digit password** shown.
+
+#### `FORWARD_TO_EMAIL`
+The email address where you want the structured data forwarded (optional).
+
+#### `GEMINI_API_KEY`
+1. Visit: [https://makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey)  
+2. Click **“Create API Key”**
+3. Copy the key and paste it into `.env`
 
 ---
 
 ## 🚀 Setup Instructions
 
-### 1. Clone the Repository
+### 1️⃣ Clone the Repository
 
 ```bash
 git clone https://github.com/your-username/mail-analysis.git
 cd mail-analysis/backend
 ```
-2. Install Dependencies
-bash
-Copy
-Edit
+
+---
+
+### 2️⃣ Install Dependencies
+
+```bash
 npm install
-3. Set up Environment Variables
-Create a .env file in the backend/ directory and add:
+```
 
-env
-Copy
-Edit
-GEMINI_API_KEY=your_gemini_api_key_here
-SENDER_EMAIL=your_email@gmail.com
-APP_PASSWORD=your_google_app_password_here
-🔑 Where to get these?
-GEMINI_API_KEY:
-Get it from https://makersuite.google.com/app/apikey
-Click "Create API Key" → Copy and paste into .env.
+---
 
-SENDER_EMAIL:
-Your Gmail address used to send emails (optional).
+### 3️⃣ Set Up Google OAuth Credentials
 
-APP_PASSWORD (for sending emails using Gmail):
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project.
+3. Enable the **Gmail API**.
+4. Go to **APIs & Services > Credentials**
+5. Click **"Create Credentials" → OAuth Client ID**
+6. Choose **"Desktop App"** as the application type
+7. Download the credentials JSON
+8. Rename it to:
 
-Go to https://myaccount.google.com/apppasswords
+```
+credentials.json
+```
 
-Enable 2-Step Verification if not already
+Place it inside the `backend/` directory.
 
-Generate an app password for "Mail"
+> ⚠️ Keep this file private and do **not** upload it to GitHub.
 
-Use the 16-digit password shown as APP_PASSWORD
+---
 
-4. Set up Google OAuth2 for Gmail Access
-Go to Google Cloud Console
+### 4️⃣ Start the Application
 
-Create a new project
-
-Navigate to APIs & Services → Credentials
-
-Click "Create Credentials" → OAuth Client ID
-
-Choose Application Type: Desktop App
-
-Download the OAuth file
-
-Rename it to credentials.json
-
-Place it inside the backend/ directory
-
-🔐 Keep this file private and don’t commit it to GitHub
-
-5. Run the Application
-bash
-Copy
-Edit
+```bash
 node index.js
+```
+
 ✅ On first run:
+- It will open a browser to authenticate your Gmail account.
+- A `token.json` file will be created for future logins.
 
-It will open a browser to authenticate with your Google account
+---
 
-After authorization, a token will be saved to token.json for reuse
+## 📤 Optional: Send Extracted Data via Email
 
-📤 (Optional) Send Extracted Info via Email
-To forward extracted contact data by email:
+If `FORWARD_TO_EMAIL`, `YOUR_GMAIL`, and `GMAIL_APP_PASSWORD` are set:
+- Extracted name, email, and contact info will be forwarded using **Nodemailer** via Gmail SMTP.
 
-Make sure SENDER_EMAIL and APP_PASSWORD are set in .env
+---
 
-The project uses Gmail SMTP and nodemailer to send emails
+## 🤖 Gemini AI Usage
 
-🧠 How Gemini AI Works Here
-Each email snippet is sent to the Gemini Pro model via the Google Generative Language API. The API responds with structured JSON like:
+Each email snippet is sent to the **Gemini Pro** model using the **Google Generative Language API**.
 
-json
-Copy
-Edit
+### Example Output:
+
+```json
 {
   "name": "Jane Doe",
   "email": "jane@example.com",
-  "contact": "+1-1234567890"
+  "contact": "+91-9876543210"
 }
-API Endpoint used:
+```
 
-bash
-Copy
-Edit
+### API Endpoint:
+
+```
 https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent
-Authorization header:
+```
 
-makefile
-Copy
-Edit
+### Authorization Header:
+
+```
 Authorization: Bearer GEMINI_API_KEY
-⚠️ Things to Keep in Mind
-This project reads email snippets only; for full body parsing, modify the Gmail API request.
+```
 
-Ensure token.json, .env, and credentials.json are ignored using .gitignore:
+---
 
-pgsql
-Copy
-Edit
+## 📄 .gitignore
+
+Make sure your `.gitignore` includes:
+
+```
 .env
 token.json
 credentials.json
-🛡️ Security Tips
-Never hardcode secrets in your JS files.
+node_modules/
+```
 
-Store sensitive keys and passwords in .env only.
+---
 
-Do not push .env, token.json, or credentials.json to your public repository.
+## 🛡️ Security Tips
 
-📌 References
-📬 Gmail API Docs
+- Do **not** commit `.env`, `token.json`, or `credentials.json` to Git.
+- Always store secrets and API keys in `.env`.
+- Use `.gitignore` to avoid accidental exposure.
 
-🔐 Google App Password
+---
 
-🤖 Gemini API Docs
+## 📚 References
 
-🧪 Gemini MakerSuite API Key
+- 📬 Gmail API Docs: [https://developers.google.com/gmail/api](https://developers.google.com/gmail/api)
+- 🔐 Google App Password Setup: [https://myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
+- 🤖 Gemini API Docs: [https://ai.google.dev/docs/gemini_api_overview](https://ai.google.dev/docs/gemini_api_overview)
+- 🧪 MakerSuite API Key: [https://makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey)
 
+---
